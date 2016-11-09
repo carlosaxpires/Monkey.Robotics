@@ -27,12 +27,21 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
 //		void EnumerateDescriptors ();
 
 		void StartUpdates();
-		void StopUpdates();
+
+        /// <summary>
+        /// Subscribe updates
+        /// </summary>
+        /// <param name="useNotification">Use Notify to subscribe | False to use Indicate instead</param>
+        void StartUpdates(bool useNotify);
+
+        void StopUpdates();
 
 		Task<ICharacteristic> ReadAsync ();
 
 		void Write (byte[] data);
 
-	}
+
+        void Write(byte[] data, WriteType writeType);        
+    }
 }
 

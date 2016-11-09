@@ -30,6 +30,7 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Bluetooth\LE\Enums.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Bluetooth\LE\DeviceBase.cs" />
     <Compile Include="Bluetooth\LE\DeviceConnectionEventArgs.cs" />
@@ -66,10 +67,7 @@
     <EmbeddedResource Include="Bluetooth\LE\KnownCharacteristics.json" />
     <EmbeddedResource Include="Bluetooth\LE\KnownDescriptors.json" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Utils\" />
-    <Folder Include="Messaging\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.6.0.5\lib\portable-net45+wp80+win8+wpa81\Newtonsoft.Json.dll</HintPath>

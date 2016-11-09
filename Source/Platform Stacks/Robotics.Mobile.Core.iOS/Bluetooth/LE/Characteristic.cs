@@ -130,7 +130,27 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
 			return;
 		}
 
-		public void StartUpdates ()
+        public void Write(byte[] data, WriteType writeType)
+        {
+            if (!CanWrite)
+            {
+                throw new InvalidOperationException("Characteristic does not support WRITE");
+            }
+            var nsdata = NSData.FromArray(data);
+            var descriptor = (CBCharacteristic)_nativeCharacteristic;
+
+            var t = writeType == WriteType.WriteWithoutResponse ?
+                CBCharacteristicWriteType.WithoutResponse :
+                CBCharacteristicWriteType.WithResponse;
+
+            _parentDevice.WriteValue(nsdata, descriptor, t);
+
+            //			Console.WriteLine ("** Characteristic.Write, Type = " + t + ", Data = " + BitConverter.ToString (data));
+
+            return;
+        }
+
+        public void StartUpdates (bool useNotify)
 		{
 			// TODO: should be bool RequestValue? compare iOS API for commonality
 			bool successful = false;
@@ -146,15 +166,26 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
 				Console.WriteLine ("** Characteristic.RequestValue, PropertyType = Notify, requesting updates");
 				_parentDevice.UpdatedCharacterteristicValue += UpdatedNotify;
 
-				_parentDevice.SetNotifyValue (true, _nativeCharacteristic);
+                if (useNotify)
+                {
+                    _parentDevice.SetNotifyValue(true, _nativeCharacteristic);
+                }
+                else
+                {
+                    throw new NotImplementedException("Set Indicate not implemented?");
+                }
 
 				successful = true;
 			}
 
 			Console.WriteLine ("** RequestValue, Succesful: " + successful.ToString());
 		}
+        public void StartUpdates()
+        {
+            StartUpdates(true);
+        }
 
-		public void StopUpdates () {
+        public void StopUpdates () {
 			//bool successful = false;
 			if (CanUpdate) {
 				_parentDevice.SetNotifyValue (false, _nativeCharacteristic);

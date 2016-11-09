@@ -105,7 +105,7 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
 		public bool CanWrite {get{return (this.Properties & CharacteristicPropertyType.WriteWithoutResponse | CharacteristicPropertyType.AppleWriteWithoutResponse) != 0; }}
 
 		// HACK: UNTESTED - this API has only been tested on iOS
-		public void Write (byte[] data)
+		public void Write (byte[] data, WriteType writeType)
 		{
 			if (!CanWrite) {
 				throw new InvalidOperationException ("Characteristic does not support WRITE");
@@ -113,14 +113,27 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
 
 			var c = _nativeCharacteristic;
 			c.SetValue (data);
-			this._gatt.WriteCharacteristic (c);
+            c.WriteType = writeType == WriteType.WriteWithoutResponse ? GattWriteType.NoResponse : GattWriteType.Default;
+            this._gatt.WriteCharacteristic (c);
 			Console.WriteLine(".....Write");
 		}
+        public void Write(byte[] data)
+        {
+            if (!CanWrite)
+            {
+                throw new InvalidOperationException("Characteristic does not support WRITE");
+            }
+
+            var c = _nativeCharacteristic;
+            c.SetValue(data);
+            this._gatt.WriteCharacteristic(c);
+            Console.WriteLine(".....Write");
+        }
 
 
 
-		// HACK: UNTESTED - this API has only been tested on iOS
-		public Task<ICharacteristic> ReadAsync()
+        // HACK: UNTESTED - this API has only been tested on iOS
+        public Task<ICharacteristic> ReadAsync()
 		{
 			var tcs = new TaskCompletionSource<ICharacteristic>();
 
@@ -150,7 +163,11 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
 			return tcs.Task;
 		}
 
-		public void StartUpdates ()
+        /// <summary>
+        /// Subscribe updates
+        /// </summary>
+        /// <param name="useNotify">Use Notify to subscribe | False to use Indicate instead</param>
+		public void StartUpdates (bool useNotify)
 		{
 			// TODO: should be bool RequestValue? compare iOS API for commonality
 			bool successful = false;
@@ -158,7 +175,7 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
 				Console.WriteLine ("Characteristic.RequestValue, PropertyType = Read, requesting updates");
 				successful = this._gatt.ReadCharacteristic (this._nativeCharacteristic);
 			}
-			if (CanUpdate) {
+			if (CanUpdate || ValueUpdated != null) {
 				Console.WriteLine ("Characteristic.RequestValue, PropertyType = Notify, requesting updates");
 				
 				successful = this._gatt.SetCharacteristicNotification (this._nativeCharacteristic, true);
@@ -176,7 +193,14 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
 
 				if (_nativeCharacteristic.Descriptors.Count > 0) {
 					BluetoothGattDescriptor descriptor = _nativeCharacteristic.Descriptors [0];
-					descriptor.SetValue (BluetoothGattDescriptor.EnableNotificationValue.ToArray ());
+                    if (useNotify)
+                    {
+                        descriptor.SetValue(BluetoothGattDescriptor.EnableNotificationValue.ToArray());
+                    }
+                    else
+                    {
+                        descriptor.SetValue(BluetoothGattDescriptor.EnableIndicationValue.ToArray());
+                    }
 					_gatt.WriteDescriptor (descriptor);
 				} else {
 					Console.WriteLine ("RequestValue, FAILED: _nativeCharacteristic.Descriptors was empty, not sure why");
@@ -185,8 +209,13 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
 
 			Console.WriteLine ("RequestValue, Succesful: " + successful.ToString());
 		}
+        public void StartUpdates()
+        {
+            StartUpdates(true);
+        }
 
-		public void StopUpdates ()
+
+        public void StopUpdates ()
 		{
 			bool successful = false;
 			if (CanUpdate) {
