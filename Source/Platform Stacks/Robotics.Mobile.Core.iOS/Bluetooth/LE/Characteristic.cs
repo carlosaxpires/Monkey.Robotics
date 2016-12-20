@@ -114,6 +114,7 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
             {
                 throw new InvalidOperationException("Characteristic does not support READ");
             }
+
             EventHandler<CBCharacteristicEventArgs> updated = null;
             updated = (object sender, CBCharacteristicEventArgs e) =>
             {
@@ -130,32 +131,36 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
             return tcs.Task;
         }
 
-        public void Write(byte[] data)
+        public Task<GattCommunicationStatus> Write(byte[] data)
         {
-            if (!CanWrite)
-            {
-                throw new InvalidOperationException("Characteristic does not support WRITE");
-            }
-            var nsdata = NSData.FromArray(data);
-            var descriptor = (CBCharacteristic)_nativeCharacteristic;
-
             var t = (Properties & CharacteristicPropertyType.AppleWriteWithoutResponse) != 0 ?
-                CBCharacteristicWriteType.WithoutResponse :
-                CBCharacteristicWriteType.WithResponse;
-
-            _parentDevice.WriteValue(nsdata, descriptor, t);
-
-            //			Console.WriteLine ("** Characteristic.Write, Type = " + t + ", Data = " + BitConverter.ToString (data));
-
-            return;
+                WriteType.WriteWithoutResponse :
+                WriteType.WriteWithResponse;
+            
+            return this.Write(data, t);
         }
 
-        public void Write(byte[] data, WriteType writeType)
+        public Task<GattCommunicationStatus> Write(byte[] data, WriteType writeType)
         {
+            var tcs = new TaskCompletionSource<GattCommunicationStatus>();
+
             if (!CanWrite)
             {
                 throw new InvalidOperationException("Characteristic does not support WRITE");
             }
+
+            EventHandler<CBCharacteristicEventArgs> written = null;
+            written = (object sender, CBCharacteristicEventArgs e) =>
+            {
+                Console.WriteLine(".....UpdatedCharacterteristicValue");
+                var c = new Characteristic(e.Characteristic, _parentDevice);
+                tcs.SetResult(Converters.ToGattCommunicationStatus(e.Error));
+                _parentDevice.WroteCharacteristicValue -= written;
+            };
+
+            _parentDevice.WroteCharacteristicValue += written;
+
+
             var nsdata = NSData.FromArray(data);
             var descriptor = (CBCharacteristic)_nativeCharacteristic;
 
@@ -164,10 +169,8 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
                 CBCharacteristicWriteType.WithResponse;
 
             _parentDevice.WriteValue(nsdata, descriptor, t);
-
-            //			Console.WriteLine ("** Characteristic.Write, Type = " + t + ", Data = " + BitConverter.ToString (data));
-
-            return;
+            
+            return tcs.Task;
         }
 
         public void StartUpdates(bool useNotify)
