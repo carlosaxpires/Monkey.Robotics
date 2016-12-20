@@ -30,7 +30,9 @@
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Bluetooth\LE\CharacteristicWriteEventArgs.cs" />
     <Compile Include="Bluetooth\LE\Enums.cs" />
+    <Compile Include="Bluetooth\LE\GattCommunicationStatus.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Bluetooth\LE\DeviceBase.cs" />
     <Compile Include="Bluetooth\LE\DeviceConnectionEventArgs.cs" />

@@ -38,10 +38,10 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
 
 		Task<ICharacteristic> ReadAsync ();
 
-		void Write (byte[] data);
+        Task<GattCommunicationStatus> Write (byte[] data);
 
 
-        void Write(byte[] data, WriteType writeType);        
+        Task<GattCommunicationStatus> Write(byte[] data, WriteType writeType);        
     }
 }
 
