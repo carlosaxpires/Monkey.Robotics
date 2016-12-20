@@ -1,8 +1,9 @@
-using System;
-using Android.Bluetooth;
-
 namespace Robotics.Mobile.Core.Bluetooth.LE
 {
+    using System;
+
+    using Android.Bluetooth;
+
     public class GattCallback : BluetoothGattCallback
     {
 

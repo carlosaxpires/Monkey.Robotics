@@ -1,10 +1,11 @@
-using System;
-using System.Collections.Generic;
-using Android.Bluetooth;
-using System.Threading.Tasks;
-
 namespace Robotics.Mobile.Core.Bluetooth.LE
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+
+    using Android.Bluetooth;
+
     /// <summary>
     /// TODO: this really should be a singleton.
     /// </summary>

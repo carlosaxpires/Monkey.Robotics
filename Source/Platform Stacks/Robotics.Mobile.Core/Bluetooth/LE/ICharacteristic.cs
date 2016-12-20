@@ -1,32 +1,32 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace Robotics.Mobile.Core.Bluetooth.LE
 {
-	public interface ICharacteristic
-	{
-		// events
-		event EventHandler<CharacteristicReadEventArgs> ValueUpdated;
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
 
-		// properties
-		Guid ID { get; }
-		string Uuid { get; }
-		byte[] Value { get; }
-		string StringValue { get; }
-		IList<IDescriptor> Descriptors { get; }
-		object NativeCharacteristic { get; }
-		string Name { get; }
-		CharacteristicPropertyType Properties { get; }
+    public interface ICharacteristic
+    {
+        // events
+        event EventHandler<CharacteristicReadEventArgs> ValueUpdated;
 
-		bool CanRead { get; }
-		bool CanUpdate { get; }
-		bool CanWrite { get; }
+        // properties
+        Guid ID { get; }
+        string Uuid { get; }
+        byte[] Value { get; }
+        string StringValue { get; }
+        IList<IDescriptor> Descriptors { get; }
+        object NativeCharacteristic { get; }
+        string Name { get; }
+        CharacteristicPropertyType Properties { get; }
 
-		// methods
-//		void EnumerateDescriptors ();
+        bool CanRead { get; }
+        bool CanUpdate { get; }
+        bool CanWrite { get; }
 
-		void StartUpdates();
+        // methods
+        //		void EnumerateDescriptors ();
+
+        void StartUpdates();
 
         /// <summary>
         /// Subscribe updates
@@ -36,12 +36,12 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
 
         void StopUpdates();
 
-		Task<ICharacteristic> ReadAsync ();
+        Task<ICharacteristic> ReadAsync();
 
-        Task<GattCommunicationStatus> Write (byte[] data);
+        Task<GattCommunicationStatus> Write(byte[] data);
 
 
-        Task<GattCommunicationStatus> Write(byte[] data, WriteType writeType);        
+        Task<GattCommunicationStatus> Write(byte[] data, WriteType writeType);
     }
 }
 

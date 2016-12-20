@@ -1,13 +1,16 @@
-using System;
-
 namespace Robotics.Mobile.Core.Bluetooth.LE
 {
-	public class DeviceDiscoveredEventArgs : EventArgs
-	{
-		public IDevice Device;
+    using System;
 
-		public DeviceDiscoveredEventArgs() : base()
-		{}
-	}
+    public class DeviceDiscoveredEventArgs : EventArgs
+    {
+        public IDevice Device;
+
+        public DeviceDiscoveredEventArgs()
+            : base()
+        {
+            
+        }
+    }
 }
 

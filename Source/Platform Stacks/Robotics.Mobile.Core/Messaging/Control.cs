@@ -1,9 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using System.Diagnostics;
-using System.ComponentModel;
-
+﻿
 #if MF_FRAMEWORK_VERSION_V4_3
 using Microsoft.SPOT;
 #else
@@ -11,29 +6,30 @@ using Microsoft.SPOT;
 
 namespace Robotics.Messaging
 {
-	/// <summary>
-	/// A variable is a named value that is kept in sync between the server and client.
+    /// <summary>
+    /// A variable is a named value that is kept in sync between the server and client.
     /// When the server updates a variable, it gets sent to the clients.
     /// When the client wants to change a value, it can send a request to the server.
     /// Simple IDs are used during network transfer of values.
     /// Values can be any of the types supported by Message.
-	/// </summary>
-	public class Variable
-	{
-		public int Id { get; set; }
-		public string Name { get; set; }
-		public bool IsWriteable { get; set; }
+    /// </summary>
+    public class Variable
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public bool IsWriteable { get; set; }
 
-		object val;
-		public virtual object Value {
-			get { return val; }
-			set { SetValue (value); }
-		}
+        object val;
+        public virtual object Value
+        {
+            get { return val; }
+            set { SetValue(value); }
+        }
 
-		public virtual void SetValue (object newVal)
-		{
-			val = newVal;
-		}
+        public virtual void SetValue(object newVal)
+        {
+            val = newVal;
+        }
 
         public double DoubleValue
         {
@@ -47,24 +43,24 @@ namespace Robotics.Messaging
                 return 0.0;
             }
         }
-	}
+    }
 
-    public delegate void VariableChangedAction (Variable v);
+    public delegate void VariableChangedAction(Variable v);
 
-	
-	/// <summary>
-	/// Commands are operations that the server can perform at the request of the client.
+
+    /// <summary>
+    /// Commands are operations that the server can perform at the request of the client.
     /// They are a basic RPC mechanism without arguments.
-	/// </summary>
-	public class Command
-	{
-		public int Id { get; set; }
-		public string Name { get; set; }
-	}
+    /// </summary>
+    public class Command
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
 
-    public delegate object CommandFunc ();
+    public delegate object CommandFunc();
 
-	
+
     /// <summary>
     /// These are all the operations that ControlServer and ControlClient
     /// use to communicate using Messages.
@@ -110,6 +106,6 @@ namespace Robotics.Messaging
         /// ExecuteCommand (int cmdId, int executionId)
         /// </summary>
         ExecuteCommand = 0x84,
-    } 
+    }
 }
 

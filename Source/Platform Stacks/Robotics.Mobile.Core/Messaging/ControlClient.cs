@@ -1,167 +1,181 @@
-﻿using System;
-using System.IO;
-using System.Threading.Tasks;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Collections.ObjectModel;
-using System.Collections.Generic;
-using System.ComponentModel;
-
-namespace Robotics.Messaging
+﻿namespace Robotics.Mobile.Core.Messaging
 {
-	public class ControlClient
-	{
-		readonly Stream stream;
-		readonly TaskScheduler scheduler;
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+    using System.ComponentModel;
+    using System.Diagnostics;
+    using System.IO;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
 
-		class ClientVariable : Variable, INotifyPropertyChanged
-		{
-			public ControlClient Client;
+    using Robotics.Messaging;
 
-			public override object Value {
-				get {
-					return base.Value;
-				}
-				set {
-					if (!IsWriteable)
-						return;
+    public class ControlClient
+    {
+        readonly Stream stream;
+        readonly TaskScheduler scheduler;
 
-					var oldValue = base.Value;
-					if (oldValue != null && oldValue.Equals (value))
-						return;
+        class ClientVariable : Variable, INotifyPropertyChanged
+        {
+            public ControlClient Client;
 
-					Client.SetVariableValueAsync (this, value);
+            public override object Value
+            {
+                get
+                {
+                    return base.Value;
+                }
+                set
+                {
+                    if (!this.IsWriteable)
+                        return;
 
-					base.Value = value;
-				}
-			}
+                    var oldValue = base.Value;
+                    if (oldValue != null && oldValue.Equals(value))
+                        return;
 
-			public override void SetValue (object newVal)
-			{
-				var oldValue = base.Value;
-				if (oldValue != null && oldValue.Equals (newVal))
-					return;
+                    this.Client.SetVariableValueAsync(this, value);
 
-				base.SetValue (newVal);
+                    base.Value = value;
+                }
+            }
 
-				Client.Schedule (() => PropertyChanged (this, new PropertyChangedEventArgs ("Value")));
-			}
+            public override void SetValue(object newVal)
+            {
+                var oldValue = base.Value;
+                if (oldValue != null && oldValue.Equals(newVal))
+                    return;
 
-			public event PropertyChangedEventHandler PropertyChanged = delegate {};
-		}
+                base.SetValue(newVal);
 
-		void Schedule (Action action)
-		{
-			Task.Factory.StartNew (
-				action,
-				CancellationToken.None,
-				TaskCreationOptions.None,
-				scheduler);
-		}
+                this.Client.Schedule(() => this.PropertyChanged(this, new PropertyChangedEventArgs("Value")));
+            }
 
-		readonly ObservableCollection<Variable> variables = new ObservableCollection<Variable> ();
+            public event PropertyChangedEventHandler PropertyChanged = delegate { };
+        }
 
-		public IList<Variable> Variables { get { return variables; } }
+        void Schedule(Action action)
+        {
+            Task.Factory.StartNew(
+                action,
+                CancellationToken.None,
+                TaskCreationOptions.None,
+                this.scheduler);
+        }
 
-		readonly ObservableCollection<Command> commands = new ObservableCollection<Command> ();
+        readonly ObservableCollection<Variable> variables = new ObservableCollection<Variable>();
 
-		public IList<Command> Commands { get { return commands; } }
+        public IList<Variable> Variables { get { return this.variables; } }
 
-		public ControlClient (Stream stream)
-		{
-			this.stream = stream;
-			scheduler = TaskScheduler.FromCurrentSynchronizationContext ();
-		}
+        readonly ObservableCollection<Command> commands = new ObservableCollection<Command>();
 
-		Task GetVariablesAsync ()
-		{
-			Debug.WriteLine ("ControlClient.GetVariablesAsync");
-			return (new Message ((byte)ControlOp.GetVariables)).WriteAsync (stream);
-		}
+        public IList<Command> Commands { get { return this.commands; } }
 
-		Task GetCommandsAsync ()
-		{
-			Debug.WriteLine ("ControlClient.GetCommandsAsync");
-			return (new Message ((byte)ControlOp.GetCommands)).WriteAsync (stream);
-		}
+        public ControlClient(Stream stream)
+        {
+            this.stream = stream;
+            this.scheduler = TaskScheduler.FromCurrentSynchronizationContext();
+        }
 
-		Task SetVariableValueAsync (ClientVariable variable, object value)
-		{
-			// This is not async because it's always reading from a cache
-			// Variable updates come asynchronously
-			return (new Message ((byte)ControlOp.SetVariableValue, variable.Id, value)).WriteAsync (stream);
-		}
+        Task GetVariablesAsync()
+        {
+            Debug.WriteLine("ControlClient.GetVariablesAsync");
+            return (new Message((byte)ControlOp.GetVariables)).WriteAsync(this.stream);
+        }
 
-		int eid = 1;
+        Task GetCommandsAsync()
+        {
+            Debug.WriteLine("ControlClient.GetCommandsAsync");
+            return (new Message((byte)ControlOp.GetCommands)).WriteAsync(this.stream);
+        }
 
-		public Task ExecuteCommandAsync (Command command)
-		{
-			return (new Message ((byte)ControlOp.ExecuteCommand, command.Id, eid++)).WriteAsync (stream);
-		}
+        Task SetVariableValueAsync(ClientVariable variable, object value)
+        {
+            // This is not async because it's always reading from a cache
+            // Variable updates come asynchronously
+            return (new Message((byte)ControlOp.SetVariableValue, variable.Id, value)).WriteAsync(this.stream);
+        }
 
-		public async Task RunAsync (CancellationToken cancellationToken)
-		{
-			await GetVariablesAsync ();
-			await GetCommandsAsync ();
+        int eid = 1;
 
-			var m = new Message ();
+        public Task ExecuteCommandAsync(Command command)
+        {
+            return (new Message((byte)ControlOp.ExecuteCommand, command.Id, this.eid++)).WriteAsync(this.stream);
+        }
 
-			while (!cancellationToken.IsCancellationRequested) {
+        public async Task RunAsync(CancellationToken cancellationToken)
+        {
+            await this.GetVariablesAsync();
+            await this.GetCommandsAsync();
 
-				await m.ReadAsync (stream);
+            var m = new Message();
 
-				Debug.WriteLine ("Got message: " + (ControlOp)m.Operation + "(" + string.Join (", ", m.Arguments.Select (x => x.ToString ())) + ")");
+            while (!cancellationToken.IsCancellationRequested)
+            {
 
-				switch ((ControlOp)m.Operation) {
-				case ControlOp.Variable:
-					{
-						var id = (int)m.Arguments [0];
-						var v = variables.FirstOrDefault (x => x.Id == id);
-						if (v == null) {
-							var cv = new ClientVariable {
-								Client = this,
-								Id = id,
-								Name = (string)m.Arguments [1],
-								IsWriteable = (bool)m.Arguments [2],
-							};
-							cv.SetValue (m.Arguments [3]);
-							v = cv;
-							Schedule (() => variables.Add (v));
-						}
-					}
-					break;
-				case ControlOp.VariableValue:
-					{
-						var id = (int)m.Arguments [0];
-						var cv = variables.FirstOrDefault (x => x.Id == id) as ClientVariable;
-						if (cv != null) {
-							var newVal = m.Arguments [1];
-							Schedule (() => cv.SetValue (newVal));
-						} else {
-							await GetVariablesAsync ();
-						}
-					}
-					break;
-				case ControlOp.Command:
-					{
-						var id = (int)m.Arguments [0];
-						var c = commands.FirstOrDefault (x => x.Id == id);
-						if (c == null) {
-							var cc = new Command {
-								Id = id,
-								Name = (string)m.Arguments [1],
-							};
-							c = cc;
-							Schedule (() => commands.Add (c));
-						}
-					}
-					break;
-					//				default:
-					//					Debug.WriteLine ("Ignoring message: " + m.Operation);
-					//					break;
-				}
-			}
-		}
-	}
+                await m.ReadAsync(this.stream);
+
+                Debug.WriteLine("Got message: " + (ControlOp)m.Operation + "(" + string.Join(", ", m.Arguments.Select(x => x.ToString())) + ")");
+
+                switch ((ControlOp)m.Operation)
+                {
+                    case ControlOp.Variable:
+                        {
+                            var id = (int)m.Arguments[0];
+                            var v = this.variables.FirstOrDefault(x => x.Id == id);
+                            if (v == null)
+                            {
+                                var cv = new ClientVariable
+                                {
+                                    Client = this,
+                                    Id = id,
+                                    Name = (string)m.Arguments[1],
+                                    IsWriteable = (bool)m.Arguments[2],
+                                };
+                                cv.SetValue(m.Arguments[3]);
+                                v = cv;
+                                this.Schedule(() => this.variables.Add(v));
+                            }
+                        }
+                        break;
+                    case ControlOp.VariableValue:
+                        {
+                            var id = (int)m.Arguments[0];
+                            var cv = this.variables.FirstOrDefault(x => x.Id == id) as ClientVariable;
+                            if (cv != null)
+                            {
+                                var newVal = m.Arguments[1];
+                                this.Schedule(() => cv.SetValue(newVal));
+                            }
+                            else
+                            {
+                                await this.GetVariablesAsync();
+                            }
+                        }
+                        break;
+                    case ControlOp.Command:
+                        {
+                            var id = (int)m.Arguments[0];
+                            var c = this.commands.FirstOrDefault(x => x.Id == id);
+                            if (c == null)
+                            {
+                                var cc = new Command
+                                {
+                                    Id = id,
+                                    Name = (string)m.Arguments[1],
+                                };
+                                c = cc;
+                                this.Schedule(() => this.commands.Add(c));
+                            }
+                        }
+                        break;
+                        //				default:
+                        //					Debug.WriteLine ("Ignoring message: " + m.Operation);
+                        //					break;
+                }
+            }
+        }
+    }
 }

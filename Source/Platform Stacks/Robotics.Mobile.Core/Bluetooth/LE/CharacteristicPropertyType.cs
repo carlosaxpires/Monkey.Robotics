@@ -1,7 +1,7 @@
-using System;
-
 namespace Robotics.Mobile.Core.Bluetooth.LE
 {
+    using System;
+
     [Flags]
     public enum CharacteristicPropertyType
     {

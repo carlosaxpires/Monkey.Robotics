@@ -1,14 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Android.Bluetooth;
-using System.Linq;
-using Java.Util;
-using Android.Media;
-using System.Threading.Tasks;
-
 namespace Robotics.Mobile.Core.Bluetooth.LE
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+
+    using Android.Bluetooth;
+
     public class Characteristic : ICharacteristic
     {
         public event EventHandler<CharacteristicReadEventArgs> ValueUpdated = delegate { };
@@ -171,7 +169,7 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
         {
             return this.Write(data, WriteType.WriteWithResponse);
         }
-        
+
         // HACK: UNTESTED - this API has only been tested on iOS
         public Task<ICharacteristic> ReadAsync()
         {
@@ -211,7 +209,7 @@ namespace Robotics.Mobile.Core.Bluetooth.LE
         /// Subscribe updates
         /// </summary>
         /// <param name="useNotify">Use Notify to subscribe | False to use Indicate instead</param>
-		public void StartUpdates(bool useNotify)
+        public void StartUpdates(bool useNotify)
         {
             // TODO: should be bool RequestValue? compare iOS API for commonality
             bool successful = false;
